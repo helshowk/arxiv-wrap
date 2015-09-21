@@ -1,0 +1,14 @@
+<?php
+    $arguments = array();
+    if (isset($_GET['search_query'])) { $arguments[] = "search_query=".str_replace(" ","_",$_GET['search_query']); }
+    if (isset($_GET['id_list'])) { $arguments[] = "id_list=".$_GET['id_list']; }
+    if (isset($_GET['start'])) { $arguments[] = "start=".$_GET['start']; } else { $arguments[] = "start=0"; }
+    if (isset($_GET['max_results'])) { $arguments[] = "max_results=".$_GET['max_results']; } else {$arguments[] = "max_results=10"; }
+    
+    $base_url = 'http://export.arxiv.org/api/query?';
+    $arguments_str = implode("&", $arguments);
+    $url = $base_url.$arguments_str;
+    
+    $response = file_get_contents($url);
+    echo $response;
+?>

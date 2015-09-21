@@ -1,0 +1,133 @@
+<DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css">
+        <script src="/js/jquery-1.9.1.min.js"></script>
+        <script src="/js/bootstrap.min.js"></script>
+        <style>
+            input.search-query {
+                width: 90%;
+            }
+            
+            #json-pre #xml-pre {
+                border: 1px solid #cccccc;
+                overflow-y: scroll;
+                overflow-x: none;
+                height: 100%;
+                width: 100%;
+            }
+            
+            pre {
+                white-space: pre-wrap;       /* CSS 3 */
+                white-space: -moz-pre-wrap;  /* Mozilla, since 1999 */
+                white-space: -pre-wrap;      /* Opera 4-6 */
+                white-space: -o-pre-wrap;    /* Opera 7 */
+                word-wrap: break-word;       /* Internet Explorer 5.5+ */
+            }
+        </style>
+        <title>ArXiv Wrap</title>
+        <meta name="description" content="A simple JSON wrapper endpoint for the arXiv API, no use restrictions.">
+    </head>
+    <body>
+        <div class="container">
+            <div class="content">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <h1 class="text-center">ArXiv Wrapper</h1>
+                    </div>
+                </div>
+                <hr>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <p>This wrapper endpoint is provided for free as is and under no circumstances do I bear any responsibility for the consequences of you using it.  Please email any questions or comments to h e d e e r (at) e l s h o w k . c o m.</p>
+                        <p><span onclick="$('#tou').toggle();" style="cursor: pointer; color: blue;">Terms of use</a></p>
+                        <div style="margin-left: 5%; margin-right: 5%; padding: 2%; border: 1px solid #cccccc; display: none;" id="tou">
+                            <p><b>Terms of Use</b></p>
+                            <p>All access to the endpoint is as anonymous as possible (i.e. your IP address is only being logged in a web servers log files but these aren't being retained over a prolonged period) and none of the access information is being intentionally persisted in any other way (e.g. a database).  By design of course all web servers keep logs but that information isn't being sold, distributed, or even analyzed (other than usual spam and security issues).  In short, I'm not profiting at all from this service, I'm providing it as is for the community to use however they'd like and hopefully it's helpful to someone for any use they see fit (so long as they comply with arXiv's terms of use).</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-sm-12">
+                        <p> The purpose of this wrapper is to expose arXiv's API (see documentation <a href="http://arxiv.org/help/api/index#documentation">here</a>) with JSON return objects instead of the default XML.</p>
+                        <p>Usage is straightforward,</p>
+                        <p><code>http://arxivwrap.org/wrapper?method=[json|xml]&<em>args</em></code></p>
+                        <p>Where <em>args</em> correspond to the <a href="http://arxiv.org/help/api/index#documentation">arXiv API arguments</a>.</p>
+                        <p>The XML to JSON conversion follows these rules:</p>
+                        <ul>
+                            <li>A variable "entries_count" has the count of the number of entries, </li>
+                            <li>Every <code>entry</code> is an object inside the "entries" array, </li>
+                            <li>Every tag underneath the entry has a "value" and "attribs" variable, </li>
+                            <li>Nested tags show up as arrays inside the "value" tag (only the <code>author</code> tag has children), </li>
+                            <li>If multiple tags exist at the same level (e.g. <code>link</code> and <code>category</code> objects) they're also listed as an array of objects (each with a "value" and "attribs").  The only difference is that they are flat such as <code>{"category": [ {"value":..., "attribs": ..}, ... ] }</code> instead of the nested objects under <code>author</code> which show up as an array of <code>{ "name": { "value": ..., "attribs": ... } }</code> objects.  You can test out the search below to see what this looks like.  </li>
+                            <li>The <code>link</code>,<code>title</code>, <code>updated</code>, and <code>id </code> tags at the root are each objects with their attribs listed as variables and their strings under "value" (e.g. <code>href</code> is a variable inside <code>link</code>)</li>
+                        </ul>
+                        <p>Here's a sample call,</p>
+                        <p><a href="http://arxivwrap.org/wrapper?method=json&search_query=au:bengio&max_results=10">http://arxivwrap.org/wrapper?method=json&search_query=au:bengio&max_results=10</a></p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-sm-12">
+                        <p>If you notice any odd behavior or incorrect results please don't hesitate to contact me.</p>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-sm-12">
+                        <p>The input box below will show sample results for the given search query with max_results=2.  White spaces are replaced with a '+' in the query, feel free to use boolean operators.  Sample search string (copy and paste this into the search box), au:bengio ANDNOT ti:deep learning</p>
+                        <input type="text" name="search_query" class="search-query">
+                        <button onClick="submitSearch()">Search arXiv</button>
+                    </div>
+                </div>
+                <hr>
+                <div id="results" class="row" style="display: none;">
+                    <div class="col-sm-6">
+                        <h3>JSON</h3>
+                        <pre class="json-pre">
+                            <code id="json">
+                            </code>
+                        </pre>
+                    </div>
+                    <div class="col-sm-6">
+                        <h3>XML</h3>
+                        <pre class="xml-pre">
+                            <code id="xml">
+                            </code>
+                        </pre>
+                    </div>
+                </div>
+            </div>
+            <div class="footer">
+            </div>
+        </div>
+        <script>
+            function submitSearch() {
+                var sq = $('[name=search_query]').val();
+                $('#results').hide();
+                sq = sq.replace(/ /g, '+');
+                $.get('arxivwrap.php', {method: 'json', max_results: 2, start: 0, search_query: sq}, function(data) {
+                    console.log(data);
+                    $('#results').show();
+                    $('#json').empty();
+                    var json_data = JSON.parse(data);
+                    document.getElementById("json").innerHTML = "\n"+JSON.stringify(json_data,undefined,2);
+                });
+                
+                $.get('arxivwrap.php', {method: 'xml', max_results: 2, start: 0, search_query: sq}, function(data) {
+                    $('#results').show();
+                    $('#xml').empty();
+                    document.getElementById("xml").innerHTML = "\n"+data;
+                });
+            }
+            
+              (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+              (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+              m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+              })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+              ga('create', 'UA-38042386-3', 'auto');
+              ga('send', 'pageview');
+        </script>
+    </body>
+</html>
